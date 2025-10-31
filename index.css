@@ -1,0 +1,30 @@
+/* Minimal index.css to prevent 404 and provide base font fallback.
+   The project uses the Tailwind CDN (via index.html) for utility classes.
+   This file can hold small custom styles. */
+
+:root {
+  --bg: #0f1724;
+  --fg: #e6eef8;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* small utility used in the app spinner */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

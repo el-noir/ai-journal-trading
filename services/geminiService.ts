@@ -1,14 +1,24 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AIMarketAnalysis, PatternStat, Session } from "../types";
 
-// Assume process.env.VITE_GEMINI_API_KEY is configured in the environment.
-const VITE_GEMINI_API_KEY = process.env.GOOGLE_VITE_GEMINI_API_KEY;
+// Try a few env names (Vite / define usage may vary). Prefer an explicit key but
+// avoid throwing during module import — only instantiate the client if a key exists.
+const RAW_GEMINI_KEY = (process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.GOOGLE_VITE_GEMINI_API_KEY || "").toString();
 
-if (!VITE_GEMINI_API_KEY) {
-  console.warn("Gemini API key not found. AI features will be disabled.");
+if (!RAW_GEMINI_KEY) {
+    console.warn("Gemini API key not found. AI features will be disabled.");
 }
 
-const ai = new GoogleGenAI({ apiKey: VITE_GEMINI_API_KEY! });
+let ai: GoogleGenAI | null = null;
+try {
+    if (RAW_GEMINI_KEY) {
+        ai = new GoogleGenAI({ apiKey: RAW_GEMINI_KEY });
+    }
+} catch (e) {
+    // If the SDK throws during construction, don't let it crash the whole app.
+    console.error("Failed to initialize Gemini client:", e);
+    ai = null;
+}
 
 const marketAnalysisSchema = {
     type: Type.OBJECT,
@@ -52,8 +62,8 @@ const marketAnalysisSchema = {
 };
 
 export const analyzeMarketImage = async (base64Image: string): Promise<AIMarketAnalysis> => {
-    if (!VITE_GEMINI_API_KEY) throw new Error("API key is not configured.");
-  
+    if (!ai) throw new Error("Gemini API key not configured or AI client failed to initialize. AI features are disabled.");
+
     const prompt = "Analyze this market chart screenshot. Identify key candlestick patterns, trend lines, and support/resistance levels. Provide trend predictions for 1m, 5m, and 15m timeframes. Based on your analysis, suggest a trade with entry, stop-loss, and take-profit levels, and include a confidence percentage. Respond in JSON format according to the provided schema.";
 
     const imagePart = {
@@ -82,28 +92,28 @@ export const analyzeMarketImage = async (base64Image: string): Promise<AIMarketA
 };
 
 export const getPatternRecommendation = async (stats: PatternStat[]): Promise<string> => {
-  if (!VITE_GEMINI_API_KEY) throw new Error("API key is not configured.");
-  
-  if (stats.length === 0) {
-    return "Not enough data for a recommendation.";
-  }
+    if (!ai) throw new Error("Gemini API key not configured or AI client failed to initialize. AI features are disabled.");
 
-  const prompt = `Based on the following trade pattern performance data, recommend the most profitable and reliable pattern for the next trade. Consider both win rate (accuracy) and number of trades. Provide only the name of the recommended pattern.
+    if (stats.length === 0) {
+        return "Not enough data for a recommendation.";
+    }
 
-  Data:
-  ${JSON.stringify(stats, null, 2)}
-  `;
+    const prompt = `Based on the following trade pattern performance data, recommend the most profitable and reliable pattern for the next trade. Consider both win rate (accuracy) and number of trades. Provide only the name of the recommended pattern.
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-  });
+    Data:
+    ${JSON.stringify(stats, null, 2)}
+    `;
 
-  return response.text.trim();
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+    });
+
+    return response.text.trim();
 };
 
 export const generateSessionSummary = async (session: Session): Promise<string> => {
-    if (!VITE_GEMINI_API_KEY) throw new Error("API key is not configured.");
+    if (!ai) throw new Error("Gemini API key not configured or AI client failed to initialize. AI features are disabled.");
 
     const tradeSummary = session.trades.map(t => 
         `- Trade #${t.tradeNumber}: Pattern '${t.pattern}', Result: ${t.result}, P/L: ${t.profitLoss.toFixed(2)} PKR`
