@@ -1,14 +1,14 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AIMarketAnalysis, PatternStat, Session } from "../types";
 
-// Assume process.env.API_KEY is configured in the environment.
-const API_KEY = process.env.API_KEY;
+// Assume process.env.GOOGLE_API_KEY is configured in the environment.
+const GOOGLE_API_KEY = process.env.GOOGLE_GOOGLE_API_KEY;
 
-if (!API_KEY) {
+if (!GOOGLE_API_KEY) {
   console.warn("Gemini API key not found. AI features will be disabled.");
 }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY! });
+const ai = new GoogleGenAI({ apiKey: GOOGLE_API_KEY! });
 
 const marketAnalysisSchema = {
     type: Type.OBJECT,
@@ -52,7 +52,7 @@ const marketAnalysisSchema = {
 };
 
 export const analyzeMarketImage = async (base64Image: string): Promise<AIMarketAnalysis> => {
-    if (!API_KEY) throw new Error("API key is not configured.");
+    if (!GOOGLE_API_KEY) throw new Error("API key is not configured.");
   
     const prompt = "Analyze this market chart screenshot. Identify key candlestick patterns, trend lines, and support/resistance levels. Provide trend predictions for 1m, 5m, and 15m timeframes. Based on your analysis, suggest a trade with entry, stop-loss, and take-profit levels, and include a confidence percentage. Respond in JSON format according to the provided schema.";
 
@@ -82,7 +82,7 @@ export const analyzeMarketImage = async (base64Image: string): Promise<AIMarketA
 };
 
 export const getPatternRecommendation = async (stats: PatternStat[]): Promise<string> => {
-  if (!API_KEY) throw new Error("API key is not configured.");
+  if (!GOOGLE_API_KEY) throw new Error("API key is not configured.");
   
   if (stats.length === 0) {
     return "Not enough data for a recommendation.";
@@ -103,7 +103,7 @@ export const getPatternRecommendation = async (stats: PatternStat[]): Promise<st
 };
 
 export const generateSessionSummary = async (session: Session): Promise<string> => {
-    if (!API_KEY) throw new Error("API key is not configured.");
+    if (!GOOGLE_API_KEY) throw new Error("API key is not configured.");
 
     const tradeSummary = session.trades.map(t => 
         `- Trade #${t.tradeNumber}: Pattern '${t.pattern}', Result: ${t.result}, P/L: ${t.profitLoss.toFixed(2)} PKR`
